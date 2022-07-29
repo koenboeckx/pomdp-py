@@ -444,7 +444,6 @@ def test_planner(rocksample, planner, nsteps=3, discount=0.95):
             break
     return total_reward, total_discounted_reward
 
-
 def init_particles_belief(k, num_particles, init_state, belief="uniform"):
     num_particles = 200
     particles = []
