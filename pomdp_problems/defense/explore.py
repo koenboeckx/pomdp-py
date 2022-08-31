@@ -327,8 +327,8 @@ class ExploreProblem(pomdp_py.POMDP):
         Returns:
             tuple: init_state (type: State), obstacles (type: list)
         """
-        # TODO: imrove this such that there are never completely blocked squares?
-        agent_position = [0, 1] #random.randint(0, n-1)] #initial position of agent
+        # TODO: improve this such that there are never completely blocked squares?
+        agent_position = [0, 1] #random.randint(0, n-1) #initial position of agent
         obstacles = []
         if type == 'random':
             for _ in range(k):
