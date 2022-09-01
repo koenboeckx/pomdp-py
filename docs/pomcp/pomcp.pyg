@@ -1,0 +1,78 @@
+    class MCTS:
+        def __init__(self, problem, T=1, c=2):
+            """T = time to explore before returning anwser
+               c = exploration factor"""
+            self.problem = problem
+            self.T = T
+            self.c = c
+
+            self.visits = {}
+            self.values = {}
+
+        def run(self, root):
+            self.visits[root], self.values[root] = 0, 0
+            self.tree = {}
+            start_time = time.time()
+            while time.time() - start_time < self.T:
+                leaf_node, trace = self.select(root)
+                if self.problem.terminal(leaf_node):
+                    value = self.problem.value(leaf_node)
+                else:
+                    children = self.expand(leaf_node)
+                    next_child, _ = children[0] # always start with first child from new children
+                    value = self.rollout(next_child)
+                self.backprop(value, trace)
+            root_vals = [(self.values[child]/self.visits[child], action)
+                        for child, action in self.tree[root]]
+            _, action = sorted(root_vals)[-1] # pick action that leads
+                                              # to child with highest value/visit
+            return action
+
+        def select(self, node):
+            trace = [node]
+            while node in self.tree: # if not in tree -> expand (i.e. is leaf node)
+                N = self.visits[node]
+                uct = []
+                for child, _ in self.tree[node]:
+                    if child not in self.visits or self.visits[child] == 0:
+                        uct.append((np.infty, child))
+                    else:
+                        uct.append((self.c * np.sqrt(np.log(N)/self.visits[child]), child))
+                v, node = max(uct)
+                trace.append(node)
+            return node, trace
+
+        def expand(self, node) -> None:
+            children = [(self.problem.step(node, action)[0], action)
+                        for action in self.problem.all_actions()]
+            self.tree[node] = children
+            for child, _ in children:
+                self.visits[child], self.values[child] = 0, 0
+            return children
+
+        def _rollout_policy(self, state):
+            return random.choice(self.problem.all_actions())
+
+        def rollout(self, state) -> float:
+            terminal = self.problem.terminal(state)
+            if terminal:
+                self.problem.value(state)
+            while not terminal:
+                action = self._rollout_policy(state)
+                state, terminal = self.problem.step(state, action)
+            return self.problem.value(state)
+
+        def backprop(self, value, trace) -> None:
+            for node in trace:
+                self.visits[node] += 1
+                self.values[node] += value
+
+
+    if __name__ == '__main__':
+        problem = Problem()
+        mcts = MCTS(problem)
+        state = problem.init_state()
+        while not problem.terminal(state):
+            action = mcts.run(state)
+            state, _ = game.move(state, move)
+

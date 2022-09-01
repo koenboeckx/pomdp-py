@@ -10,6 +10,7 @@
 \usepackage{tikz}
 \usepackage{float}
 \usepackage{comment}
+\usepackage{minted}
 
 %opening
 \title{	Monte-Carlo Planning in Large POMDPs}
@@ -50,10 +51,22 @@ During the search, MCTS constructs a tree, starting from a root node, of already
     \item \emph{Simulation}: after exapnsion, the algorithm picks a child node arbitrarily, and simulates an entire search trough the tree until a terminal state is reached (like a depth-first search). The next node (i.e. the action to take in each subseaquent state) is choses according to a \emph{rollout policy}. Unless a priori information or good heuristics are known, the nodes are picked randomly during rollout. 
     \item \emph{Backpropagation}: once the algorithm reaches the a terminal state, the value of that state is backpropagated through all nodes visited during the selection phase. The visitation count $N(s, a)$ for each state-action pair is incremented, and the $Q$-value $Q(s, a)$ is updated.
 \end{enumerate}
-A great benefit of MCTS is that the values of intermediate states do not have to be evaluated, as for depth-limited minimax search, which greatly reduces the amount of domain knowledge required. Only the value of the terminal state at the end of each simulation is required.
+
+\begin{figure}[h]
+\includegraphics[scale=0.25]{MCTS-steps.png}
+\caption{The $4$ phases in an MCTS iteration. Every node contains the number of visits and the accumulated value}
+\end{figure}
+
+A great benefit of MCTS is that the values of intermediate states do not have to be evaluated, as for depth-limited minimax search, which greatly reduces the amount of domain knowledge required. Only the value of the terminal state at the end of each simulation is required.\\
+The {\tt python} code in appendix \ref{app:mcts} describes a fully-functional MCTS algorithm to find an optimal move for problem $P$.
+
+
+
+% ######################################################################"
 \section{Particle Filter}
-A \emph{particle filter} is a way to represent a probability distribution as a collection of samples, while this distribution is subject to a dynamic process $T(x, u, x') = p(x' | u, x)$. The basic idea is to approximate the posterior of a set of amples $\{x_t^{[i]}\}$. Each $x_t^{[i]}$ is a concrete sample of index $i$, where $i$ ranges from $1$ to $M$, the size of the article filter.\\
-The basi version of the algorithm goes as follows:
+\emph{Particle filters}, or sequential Monte Carlo methods, are a set of Monte Carlo algorithms used to solve filtering problems arising in signal processing and Bayesian statistical inference. The filtering problem consists of estimating the internal states in dynamical systems when partial observations are made and random perturbations are present in the sensors as well as in the dynamical system. The objective is to compute the posterior distributions of the states of a Markov process, given the noisy and partial observations.\\
+More formally, a particle filter is a way to represent a probability distribution as a collection of samples, while this distribution is subject to a dynamic process $T(x, u, x') = p(x' | u, x)$. The basic idea is to approximate the posterior of a set of samples $\{x_t^{[i]}\}$. Each $x_t^{[i]}$ is a concrete sample of index $i$, where $i$ ranges from $1$ to $M$, the size of the article filter.\\
+The basic version of the algorithm goes as follows:
 \begin{itemize}
     \item \textbf{Initialization:} At time $t=0$, draw $M$ particles according to $p(x_0)$. Call this set of particles $X_0$.
     \item \textbf{Recursion:} 
@@ -63,14 +76,112 @@ The basi version of the algorithm goes as follows:
     \end{enumerate}
 \end{itemize}
 
+\begin{comment}
+\begin{figure}[h]
+	\centering
+	\includegraphics[scale=1]{particle-filter.jpg}
+	\caption{The $4$ phases in an MCTS iteration. Every node contains the number of visits and the accumulated value}
+\end{figure}
+\end{comment}
+
 \begin{thebibliography}{9}
-\bibitem{silver2010}
+	\bibitem{silver2010}
 	Silver, David, and Joel Veness. "Monte-Carlo planning in large POMDPs." Advances in neural information processing systems 23 (2010).
-
-\bibitem{kocsis2006}
-    L. Kocsis and C. Szepesvari. Bandit based Monte-Carlo planning. In 15th European
-    Conference on Machine Learning, pages 282–293, (2006).
-
+	
+	\bibitem{kocsis2006}
+	L. Kocsis and C. Szepesvari. Bandit based Monte-Carlo planning. In 15th European
+	Conference on Machine Learning, pages 282–293, (2006).
+	
 \end{thebibliography}
+
+\newpage
+\appendix
+\section{MCTS Implementation}
+\label{app:mcts}
+
+\begin{minted}{python}
+    class MCTS:
+        def __init__(self, problem, T=1, c=2):
+            """T = time to explore before returning anwser
+               c = exploration factor"""
+            self.problem = problem
+            self.T = T
+            self.c = c
+    
+            self.visits = {}
+            self.values = {}
+        
+        def run(self, root):
+            self.visits[root], self.values[root] = 0, 0
+            self.tree = {}
+            start_time = time.time()
+            while time.time() - start_time < self.T:
+                leaf_node, trace = self.select(root)
+                if self.problem.terminal(leaf_node):
+                    value = self.problem.value(leaf_node)
+                else:
+                    children = self.expand(leaf_node)
+                    next_child, _ = children[0] # always start with first child from new children
+                    value = self.rollout(next_child)
+                self.backprop(value, trace)
+            root_vals = [(self.values[child]/self.visits[child], action)
+                        for child, action in self.tree[root]]
+            _, action = sorted(root_vals)[-1] # pick action that leads
+                                              # to child with highest value/visit
+            return action
+        
+        def select(self, node):
+            trace = [node]
+            while node in self.tree: # if not in tree -> expand (i.e. is leaf node)
+                N = self.visits[node]
+                uct = []
+                for child, _ in self.tree[node]:
+                    if child not in self.visits or self.visits[child] == 0:
+                        uct.append((np.infty, child))
+                    else:
+                        uct.append((self.c * np.sqrt(np.log(N)/self.visits[child]), child))
+                v, node = max(uct)
+                trace.append(node)
+            return node, trace
+    
+        def expand(self, node) -> None:
+            children = [(self.problem.step(node, action)[0], action)
+                        for action in self.problem.all_actions()]
+            self.tree[node] = children
+            for child, _ in children:
+                self.visits[child], self.values[child] = 0, 0
+            return children
+    
+        def _rollout_policy(self, state):
+            return random.choice(self.problem.all_actions())
+    
+        def rollout(self, state) -> float:
+            terminal = self.problem.terminal(state)
+            if terminal:
+                self.problem.value(state)
+            while not terminal:
+                action = self._rollout_policy(state)
+                state, terminal = self.problem.step(state, action)
+            return self.problem.value(state)
+    
+        def backprop(self, value, trace) -> None:
+            for node in trace:
+                self.visits[node] += 1
+                self.values[node] += value
+                
+    
+    if __name__ == '__main__':
+        problem = Problem()
+        mcts = MCTS(problem)
+        state = problem.init_state()
+        while not problem.terminal(state):
+            action = mcts.run(state)
+            state, _ = game.move(state, move)
+    
+    \end{minted}
+
+
+
+
 
 \end{document}

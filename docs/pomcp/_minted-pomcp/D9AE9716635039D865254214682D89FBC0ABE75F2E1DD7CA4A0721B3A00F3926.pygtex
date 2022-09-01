@@ -1,0 +1,80 @@
+\begin{Verbatim}[commandchars=\\\{\}]
+    \PYG{k}{class} \PYG{n+nc}{MCTS}\PYG{p}{:}
+        \PYG{k}{def} \PYG{n+nf+fm}{\PYGZus{}\PYGZus{}init\PYGZus{}\PYGZus{}}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{problem}\PYG{p}{,} \PYG{n}{T}\PYG{o}{=}\PYG{l+m+mi}{1}\PYG{p}{,} \PYG{n}{c}\PYG{o}{=}\PYG{l+m+mi}{2}\PYG{p}{):}
+            \PYG{l+s+sd}{\PYGZdq{}\PYGZdq{}\PYGZdq{}T = time to explore before returning anwser}
+\PYG{l+s+sd}{               c = exploration factor\PYGZdq{}\PYGZdq{}\PYGZdq{}}
+            \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{problem} \PYG{o}{=} \PYG{n}{problem}
+            \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{T} \PYG{o}{=} \PYG{n}{T}
+            \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{c} \PYG{o}{=} \PYG{n}{c}
+
+            \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{visits} \PYG{o}{=} \PYG{p}{\PYGZob{}\PYGZcb{}}
+            \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{values} \PYG{o}{=} \PYG{p}{\PYGZob{}\PYGZcb{}}
+
+        \PYG{k}{def} \PYG{n+nf}{run}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{root}\PYG{p}{):}
+            \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{visits}\PYG{p}{[}\PYG{n}{root}\PYG{p}{],} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{values}\PYG{p}{[}\PYG{n}{root}\PYG{p}{]} \PYG{o}{=} \PYG{l+m+mi}{0}\PYG{p}{,} \PYG{l+m+mi}{0}
+            \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{tree} \PYG{o}{=} \PYG{p}{\PYGZob{}\PYGZcb{}}
+            \PYG{n}{start\PYGZus{}time} \PYG{o}{=} \PYG{n}{time}\PYG{o}{.}\PYG{n}{time}\PYG{p}{()}
+            \PYG{k}{while} \PYG{n}{time}\PYG{o}{.}\PYG{n}{time}\PYG{p}{()} \PYG{o}{\PYGZhy{}} \PYG{n}{start\PYGZus{}time} \PYG{o}{\PYGZlt{}} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{T}\PYG{p}{:}
+                \PYG{n}{leaf\PYGZus{}node}\PYG{p}{,} \PYG{n}{trace} \PYG{o}{=} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{select}\PYG{p}{(}\PYG{n}{root}\PYG{p}{)}
+                \PYG{k}{if} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{problem}\PYG{o}{.}\PYG{n}{terminal}\PYG{p}{(}\PYG{n}{leaf\PYGZus{}node}\PYG{p}{):}
+                    \PYG{n}{value} \PYG{o}{=} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{problem}\PYG{o}{.}\PYG{n}{value}\PYG{p}{(}\PYG{n}{leaf\PYGZus{}node}\PYG{p}{)}
+                \PYG{k}{else}\PYG{p}{:}
+                    \PYG{n}{children} \PYG{o}{=} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{expand}\PYG{p}{(}\PYG{n}{leaf\PYGZus{}node}\PYG{p}{)}
+                    \PYG{n}{next\PYGZus{}child}\PYG{p}{,} \PYG{n}{\PYGZus{}} \PYG{o}{=} \PYG{n}{children}\PYG{p}{[}\PYG{l+m+mi}{0}\PYG{p}{]} \PYG{c+c1}{\PYGZsh{} always start with first child from new children}
+                    \PYG{n}{value} \PYG{o}{=} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{rollout}\PYG{p}{(}\PYG{n}{next\PYGZus{}child}\PYG{p}{)}
+                \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{backprop}\PYG{p}{(}\PYG{n}{value}\PYG{p}{,} \PYG{n}{trace}\PYG{p}{)}
+            \PYG{n}{root\PYGZus{}vals} \PYG{o}{=} \PYG{p}{[(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{values}\PYG{p}{[}\PYG{n}{child}\PYG{p}{]}\PYG{o}{/}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{visits}\PYG{p}{[}\PYG{n}{child}\PYG{p}{],} \PYG{n}{action}\PYG{p}{)}
+                        \PYG{k}{for} \PYG{n}{child}\PYG{p}{,} \PYG{n}{action} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{tree}\PYG{p}{[}\PYG{n}{root}\PYG{p}{]]}
+            \PYG{n}{\PYGZus{}}\PYG{p}{,} \PYG{n}{action} \PYG{o}{=} \PYG{n+nb}{sorted}\PYG{p}{(}\PYG{n}{root\PYGZus{}vals}\PYG{p}{)[}\PYG{o}{\PYGZhy{}}\PYG{l+m+mi}{1}\PYG{p}{]} \PYG{c+c1}{\PYGZsh{} pick action that leads}
+                                              \PYG{c+c1}{\PYGZsh{} to child with highest value/visit}
+            \PYG{k}{return} \PYG{n}{action}
+
+        \PYG{k}{def} \PYG{n+nf}{select}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{node}\PYG{p}{):}
+            \PYG{n}{trace} \PYG{o}{=} \PYG{p}{[}\PYG{n}{node}\PYG{p}{]}
+            \PYG{k}{while} \PYG{n}{node} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{tree}\PYG{p}{:} \PYG{c+c1}{\PYGZsh{} if not in tree \PYGZhy{}\PYGZgt{} expand (i.e. is leaf node)}
+                \PYG{n}{N} \PYG{o}{=} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{visits}\PYG{p}{[}\PYG{n}{node}\PYG{p}{]}
+                \PYG{n}{uct} \PYG{o}{=} \PYG{p}{[]}
+                \PYG{k}{for} \PYG{n}{child}\PYG{p}{,} \PYG{n}{\PYGZus{}} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{tree}\PYG{p}{[}\PYG{n}{node}\PYG{p}{]:}
+                    \PYG{k}{if} \PYG{n}{child} \PYG{o+ow}{not} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{visits} \PYG{o+ow}{or} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{visits}\PYG{p}{[}\PYG{n}{child}\PYG{p}{]} \PYG{o}{==} \PYG{l+m+mi}{0}\PYG{p}{:}
+                        \PYG{n}{uct}\PYG{o}{.}\PYG{n}{append}\PYG{p}{((}\PYG{n}{np}\PYG{o}{.}\PYG{n}{infty}\PYG{p}{,} \PYG{n}{child}\PYG{p}{))}
+                    \PYG{k}{else}\PYG{p}{:}
+                        \PYG{n}{uct}\PYG{o}{.}\PYG{n}{append}\PYG{p}{((}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{c} \PYG{o}{*} \PYG{n}{np}\PYG{o}{.}\PYG{n}{sqrt}\PYG{p}{(}\PYG{n}{np}\PYG{o}{.}\PYG{n}{log}\PYG{p}{(}\PYG{n}{N}\PYG{p}{)}\PYG{o}{/}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{visits}\PYG{p}{[}\PYG{n}{child}\PYG{p}{]),} \PYG{n}{child}\PYG{p}{))}
+                \PYG{n}{v}\PYG{p}{,} \PYG{n}{node} \PYG{o}{=} \PYG{n+nb}{max}\PYG{p}{(}\PYG{n}{uct}\PYG{p}{)}
+                \PYG{n}{trace}\PYG{o}{.}\PYG{n}{append}\PYG{p}{(}\PYG{n}{node}\PYG{p}{)}
+            \PYG{k}{return} \PYG{n}{node}\PYG{p}{,} \PYG{n}{trace}
+
+        \PYG{k}{def} \PYG{n+nf}{expand}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{node}\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{k+kc}{None}\PYG{p}{:}
+            \PYG{n}{children} \PYG{o}{=} \PYG{p}{[(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{problem}\PYG{o}{.}\PYG{n}{step}\PYG{p}{(}\PYG{n}{node}\PYG{p}{,} \PYG{n}{action}\PYG{p}{)[}\PYG{l+m+mi}{0}\PYG{p}{],} \PYG{n}{action}\PYG{p}{)}
+                        \PYG{k}{for} \PYG{n}{action} \PYG{o+ow}{in} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{problem}\PYG{o}{.}\PYG{n}{all\PYGZus{}actions}\PYG{p}{()]}
+            \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{tree}\PYG{p}{[}\PYG{n}{node}\PYG{p}{]} \PYG{o}{=} \PYG{n}{children}
+            \PYG{k}{for} \PYG{n}{child}\PYG{p}{,} \PYG{n}{\PYGZus{}} \PYG{o+ow}{in} \PYG{n}{children}\PYG{p}{:}
+                \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{visits}\PYG{p}{[}\PYG{n}{child}\PYG{p}{],} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{values}\PYG{p}{[}\PYG{n}{child}\PYG{p}{]} \PYG{o}{=} \PYG{l+m+mi}{0}\PYG{p}{,} \PYG{l+m+mi}{0}
+            \PYG{k}{return} \PYG{n}{children}
+
+        \PYG{k}{def} \PYG{n+nf}{\PYGZus{}rollout\PYGZus{}policy}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{state}\PYG{p}{):}
+            \PYG{k}{return} \PYG{n}{random}\PYG{o}{.}\PYG{n}{choice}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{problem}\PYG{o}{.}\PYG{n}{all\PYGZus{}actions}\PYG{p}{())}
+
+        \PYG{k}{def} \PYG{n+nf}{rollout}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{state}\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{n+nb}{float}\PYG{p}{:}
+            \PYG{n}{terminal} \PYG{o}{=} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{problem}\PYG{o}{.}\PYG{n}{terminal}\PYG{p}{(}\PYG{n}{state}\PYG{p}{)}
+            \PYG{k}{if} \PYG{n}{terminal}\PYG{p}{:}
+                \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{problem}\PYG{o}{.}\PYG{n}{value}\PYG{p}{(}\PYG{n}{state}\PYG{p}{)}
+            \PYG{k}{while} \PYG{o+ow}{not} \PYG{n}{terminal}\PYG{p}{:}
+                \PYG{n}{action} \PYG{o}{=} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{\PYGZus{}rollout\PYGZus{}policy}\PYG{p}{(}\PYG{n}{state}\PYG{p}{)}
+                \PYG{n}{state}\PYG{p}{,} \PYG{n}{terminal} \PYG{o}{=} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{problem}\PYG{o}{.}\PYG{n}{step}\PYG{p}{(}\PYG{n}{state}\PYG{p}{,} \PYG{n}{action}\PYG{p}{)}
+            \PYG{k}{return} \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{problem}\PYG{o}{.}\PYG{n}{value}\PYG{p}{(}\PYG{n}{state}\PYG{p}{)}
+
+        \PYG{k}{def} \PYG{n+nf}{backprop}\PYG{p}{(}\PYG{n+nb+bp}{self}\PYG{p}{,} \PYG{n}{value}\PYG{p}{,} \PYG{n}{trace}\PYG{p}{)} \PYG{o}{\PYGZhy{}\PYGZgt{}} \PYG{k+kc}{None}\PYG{p}{:}
+            \PYG{k}{for} \PYG{n}{node} \PYG{o+ow}{in} \PYG{n}{trace}\PYG{p}{:}
+                \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{visits}\PYG{p}{[}\PYG{n}{node}\PYG{p}{]} \PYG{o}{+=} \PYG{l+m+mi}{1}
+                \PYG{n+nb+bp}{self}\PYG{o}{.}\PYG{n}{values}\PYG{p}{[}\PYG{n}{node}\PYG{p}{]} \PYG{o}{+=} \PYG{n}{value}
+
+
+    \PYG{k}{if} \PYG{n+nv+vm}{\PYGZus{}\PYGZus{}name\PYGZus{}\PYGZus{}} \PYG{o}{==} \PYG{l+s+s1}{\PYGZsq{}\PYGZus{}\PYGZus{}main\PYGZus{}\PYGZus{}\PYGZsq{}}\PYG{p}{:}
+        \PYG{n}{problem} \PYG{o}{=} \PYG{n}{Problem}\PYG{p}{()}
+        \PYG{n}{mcts} \PYG{o}{=} \PYG{n}{MCTS}\PYG{p}{(}\PYG{n}{problem}\PYG{p}{)}
+        \PYG{n}{state} \PYG{o}{=} \PYG{n}{problem}\PYG{o}{.}\PYG{n}{init\PYGZus{}state}\PYG{p}{()}
+        \PYG{k}{while} \PYG{o+ow}{not} \PYG{n}{problem}\PYG{o}{.}\PYG{n}{terminal}\PYG{p}{(}\PYG{n}{state}\PYG{p}{):}
+            \PYG{n}{action} \PYG{o}{=} \PYG{n}{mcts}\PYG{o}{.}\PYG{n}{run}\PYG{p}{(}\PYG{n}{state}\PYG{p}{)}
+            \PYG{n}{state}\PYG{p}{,} \PYG{n}{\PYGZus{}} \PYG{o}{=} \PYG{n}{game}\PYG{o}{.}\PYG{n}{move}\PYG{p}{(}\PYG{n}{state}\PYG{p}{,} \PYG{n}{move}\PYG{p}{)}
+
+\end{Verbatim}
